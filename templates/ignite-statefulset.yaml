@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: ignite-cluster
+  labels:
+    app: ignite
+spec:
+  serviceName: ignite-headless
+  replicas: {{ .Values.ignite.replicas }}
+  selector:
+    matchLabels:
+      app: ignite
+  template:
+    metadata:
+      labels:
+        app: ignite
+    spec:
+      containers:
+        - name: ignite-server
+          image: "{{ .Values.ignite.image }}"
+          resources:
+            requests:
+              cpu: {{ .Values.ignite.resources.requests.cpu }}
+              memory: {{ .Values.ignite.resources.requests.memory }}
+            limits:
+              cpu: {{ .Values.ignite.resources.limits.cpu }}
+              memory: {{ .Values.ignite.resources.limits.memory }}
+          ports:
+            - containerPort: 47500  # discovery
+            - containerPort: 47100  # comm
+            - containerPort: 10800  # client
+          volumeMounts:
+            - name: ignite-storage
+              mountPath: /data
+          # If we want to use configMap:
+          # - name: config-volume
+          #   mountPath: /ignite/config
+      # volumes:
+      # - name: config-volume
+      #   configMap:
+      #     name: ignite-config
+
+  volumeClaimTemplates:
+    - metadata:
+        name: ignite-storage
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: "{{ .Values.ignite.storageSize }}"

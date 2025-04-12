@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: b1-service
+  labels:
+    app: b1
+spec:
+  type: ClusterIP
+  selector:
+    app: b1
+  ports:
+    - name: http
+      port: 80
+      targetPort: {{ .Values.b1.containerPort }}
+    - name: metrics           # <--- для метрик
+      port: 8080
+      targetPort: metrics

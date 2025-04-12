@@ -1,0 +1,57 @@
+# values.yaml
+
+# Параметры для B1 (backendNotifications)
+b1:
+  replicas: 2
+  image: "simp4catboys/backendnotifications:latest"   # Docker-образ с вашим B1
+  containerPort: 8080
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
+    limits:
+      cpu: "1"
+      memory: "1Gi"
+  # Включаем Ingress (sticky sessions)
+  enableIngress: true
+  ingressHost: "b1.local"       # Хост, где будет доступен B1
+  serviceType: "ClusterIP"
+  stickyCookie: "ROUTEID"
+
+
+# Параметры Ignite
+ignite:
+  replicas: 1
+  image: "simp4catboys/ignite-java11:latest"
+  resources:
+    requests:
+      cpu: "250m"
+      memory: "512Mi"
+    limits:
+      cpu: "2"
+      memory: "2Gi"
+  storageSize: "5Gi"    # объём PV для Ignite
+
+# Параметры PostgreSQL
+postgres:
+  replicas: 1
+  image: "postgres:14"
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "256Mi"
+    limits:
+      cpu: "1"
+      memory: "1Gi"
+  storageSize: "5Gi"           # объём PV для Postgres
+  dbName: "notifications"
+  username: "demo"
+  passwordSecretName: "b1-postgres-secret"
+
+# Имя сервиса и порт Postgres (используются в B1 шаблоне)
+postgresServiceName: "postgres-service"
+postgresPort: 5432
+
+# Имя сервиса и порт Ignite (используются в B1, B2)
+igniteServiceName: "ignite-headless"
+igniteClientPort: "47500..47509"

@@ -1,0 +1,77 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backendnotifications
+  labels:
+    app: b1
+spec:
+  replicas: {{ .Values.b1.replicas }}
+  selector:
+    matchLabels:
+      app: b1
+  template:
+    metadata:
+      labels:
+        app: b1
+        app.kubernetes.io/component: backend
+        app.kubernetes.io/instance: notifications
+    spec:
+      containers:
+        - name: b1
+          image: "{{ .Values.b1.image }}"
+          resources:
+            requests:
+              cpu: "{{ .Values.b1.resources.requests.cpu }}"
+              memory: "{{ .Values.b1.resources.requests.memory }}"
+            limits:
+              cpu: "{{ .Values.b1.resources.limits.cpu }}"
+              memory: "{{ .Values.b1.resources.limits.memory }}"
+          ports:
+            - name: http          # основной HTTP
+              containerPort: {{ .Values.b1.containerPort }}
+            - name: metrics       # <--- отдельный named-port для метрик
+              containerPort: 8080
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:postgresql://{{ .Values.postgresServiceName }}:{{ .Values.postgresPort }}/{{ .Values.postgres.dbName }}"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "{{ .Values.postgres.username }}"
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: "{{ .Values.postgres.passwordSecretName }}"
+                  key: password
+            - name: IGNITE_ADDRESS
+              value: "{{ .Values.igniteServiceName }}"
+            - name: IGNITE_PORT
+              value: "{{ .Values.igniteClientPort }}"
+            - name: JAVA_OPTS
+              value: "-Xms512m -Xmx2G -XX:MaxDirectMemorySize=1G -Djava.net.preferIPv4Stack=true -DIGNITE_PERFORMANCE_SUGGESTIONS_DISABLED=true -DIGNITE_NO_SHUTDOWN_HOOK=true --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.base/java.nio=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/jdk.internal.misc=ALL-UNNAMED -DIGNITE_QUIET=false"
+
+            # <--- ключевые переменные, чтобы Spring Boot expose /actuator/prometheus:
+            - name: MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE
+              value: "prometheus,health,info"
+            - name: MANAGEMENT_ENDPOINTS_WEB_BASEPATH
+              value: "/actuator"
+            - name: MANAGEMENT_ENDPOINT_METRICS_EXPORT_PROMETHEUS_ENABLED
+              value: "true"
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: b1-hpa
+  namespace: default
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: backendnotifications
+  minReplicas: 2
+  maxReplicas: 5
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 50

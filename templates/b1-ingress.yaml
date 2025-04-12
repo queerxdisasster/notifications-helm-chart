@@ -1,0 +1,27 @@
+{{- if .Values.b1.enableIngress }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: b1-ingress
+  labels:
+    app: b1
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    # Если нужно «липкие» сессии (sticky sessions):
+    # nginx.ingress.kubernetes.io/affinity: "cookie"
+    # nginx.ingress.kubernetes.io/session-cookie-name: "{{ .Values.b1.stickyCookie }}"
+    # Можно убрать эти две строки, если хотите обычный round-robin
+
+spec:
+  rules:
+    - host: {{ .Values.b1.ingressHost }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: b1-service
+                port:
+                  number: 80
+  {{- end }}

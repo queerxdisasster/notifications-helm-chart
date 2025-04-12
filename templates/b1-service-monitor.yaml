@@ -1,0 +1,19 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: b1-servicemonitor
+  labels:
+    app: b1
+    release: monitoring  # Remove quotes as mentioned earlier
+spec:
+  selector:
+    matchLabels:
+      app: b1
+  namespaceSelector:
+    matchNames:
+      - default
+  endpoints:
+    - port: metrics
+      path: /actuator/prometheus
+      interval: 15s
+      scheme: http
