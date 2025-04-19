@@ -1,6 +1,6 @@
-# 🚀 notifications-stack
+# 🚀 notifications service
 
-Полное руководство по запуску проекта **notifications-stack** в Kubernetes с помощью Helm и Docker.
+Полное руководство по запуску проекта **notifications-service** в Kubernetes с помощью Helm и Docker.
 
 ## 📋 О проекте
 
